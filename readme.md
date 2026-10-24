@@ -6,7 +6,6 @@
 
 Single-node allocation (4 GPUs):
 
-bash
 
 ```
 salloc --nodes=1 --qos=interactive --time=01:00:00 \
@@ -16,7 +15,6 @@ salloc --nodes=1 --qos=interactive --time=01:00:00 \
 
 Multi-node allocation (2 nodes, 4 GPUs per node):
 
-bash
 
 ```
 salloc --nodes=2 --qos=interactive --time=00:30:00 \
