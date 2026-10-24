@@ -1,44 +1,133 @@
-# A Brief Introduction to PyTorch DDP Model Training
+# A Brief Introduction to PyTorch DDP and FSDP Model Training
 
-## Useful Commands 
+## Useful Commands
 
-    Allocate node: 
-    - Single Node: salloc --nodes 1 --qos interactive --time 01:00:00 --constraint gpu --gpus-per-node 4 --account=<acc_name>_g
-    - Multinode: salloc --nodes 2 --qos interactive --time 00:30:00 --ntasks-per-node=4 --cpus-per-task=32 --constraint gpu --gpus-per-node 4 --account=<acc_name>_g
-        - Run: ./multinode_setup_and_run.sh [9-11]<filename>.py
-    Enable PyTorch: module load pytorch/2.6.0
-    Deep profiling: 
-    - pip install -U tensorboard torch-tb-profiler
-    - **Add profile context in the code**
-    - tensorboard --logdir=./log
-    Debug Tips:
-    - Check for slow import: python -X importtime file.py
-    - When using print, use flush=True. E.g.: print('test', flush=True)
+### 1. Allocate Compute Nodes
 
-## Contents
+Single-node allocation (4 GPUs):
 
-### Day 1
+bash
 
-#### Files 
+```
+salloc --nodes=1 --qos=interactive --time=01:00:00 \
+  --constraint=gpu --gpus-per-node=4 \
+  --account=<acc_name>_g
+```
 
-- `0_torch_dist.py` Launch 4 processes and performs all_reduce
-- `1_torch_dist_gpu.py` Launch 4 processes and performs all_reduce in GPU
-- `2_mnist_training.py` A simple MNIST classification pipeline using a single GPU
-- `3_mnist_distributed.py` 4 identical processes performing exactly same task - a simple MNIST classification pipeline GPU
-- `4_mnist_manual_ddp.py` A manual implementation of DDP on previous pipeline with distributed sampler
-- `5_mnist_ddp_pt.py` PyTorch wrapper for DDP. No manual all_reduce needed
-- `test-profile.py` A smaller DDP ML pipeline with dummy data and Tensorboard profiling for easier inspection. Output saved as `./log`. Inspect using `tensorboard --logdir=./log`.
+Multi-node allocation (2 nodes, 4 GPUs per node):
 
-### Day 2
+bash
 
-Useful Commands:
-- Multinode allocation: salloc --nodes 2 --qos interactive --time 00:30:00 __--ntasks-per-node=4__ --cpus-per-task=32 --constraint gpu --gpus-per-node 4 --account=<acc_name>_g
-- module load pytorch/2.6.0
-- Run: ./multinode_setup_and_run.sh `<filename>`.py
+```
+salloc --nodes=2 --qos=interactive --time=00:30:00 \
+  --ntasks-per-node=4 --cpus-per-task=32 \
+  --constraint=gpu --gpus-per-node=4 \
+  --account=<acc_name>_g
+```
 
-#### Files
+### 2. Load PyTorch
 
-- `6_torch_dist_multi_node.py` all_reduce example for multinode
-- `7_mnist_ddp_pt_multinode.py` MNIST training pipeline for MultiNode DDP
-- `8_mnist_ddp_pt_multinode_streaming.py` MNIST training pipeline for MultiNode DDP with streaming dataloader from disk
-- `create_mnist_h5.py` Create chunked MNIST dataset for streaming
+bash
+
+```
+module load pytorch/2.6.0
+```
+
+### 3. Run Multi-Node Training
+
+From the project directory, run:
+
+bash
+
+```
+./multinode_setup_and_run.sh <filename>.py
+```
+
+For example:
+
+bash
+
+```
+./multinode_setup_and_run.sh 7_mnist_ddp_pt_multinode.py
+```
+
+### 4. Debugging Tips
+
+- Investigate slow imports: Use Python's import-time profiling to identify modules that take a long time to load.
+  bash
+  ```
+  python -X importtime file.py
+  ```
+- Flush output immediately: When debugging distributed jobs, use `flush=True` to ensure that print output is written promptly.
+  python
+  ```
+  print("test", flush=True)
+  ```
+
+## Course Contents
+
+### Day 1: Introduction to Distributed Training and DDP
+
+The first day introduces PyTorch distributed communication, single-GPU training, and the fundamentals of implementing Distributed Data Parallel (DDP).
+
+#### Files and Examples
+
+- `0_torch_dist.py` — Launches four processes and demonstrates `all_reduce` using distributed communication.
+- `1_torch_dist_gpu.py` — Demonstrates GPU-based `all_reduce` across four processes.
+- `2_mnist_training.py` — Implements a basic MNIST image classification pipeline using a single GPU.
+- `3_mnist_distributed.py` — Launches four processes that independently perform the same MNIST training task, illustrating why distributed execution alone does not guarantee efficient data-parallel training.
+- `4_mnist_manual_ddp.py` — Implements DDP manually by synchronizing gradients across processes and using a distributed data sampler.
+- `5_mnist_ddp_pt.py` — Uses PyTorch's built-in `DistributedDataParallel` (DDP) wrapper to simplify gradient synchronization, eliminating the need for manual `all_reduce` operations on model gradients.
+
+### Day 2: Multi-Node DDP, Streaming Data, and FSDP
+
+The second day extends distributed training across multiple nodes, introduces streaming data loading, and explores Fully Sharded Data Parallel (FSDP) for memory-efficient model training.
+
+#### Useful Commands
+
+Allocate two nodes with four GPUs per node:
+
+bash
+
+```
+salloc --nodes=2 --qos=interactive --time=00:30:00 \
+  --ntasks-per-node=4 --cpus-per-task=32 \
+  --constraint=gpu --gpus-per-node=4 \
+  --account=<acc_name>_g
+```
+
+Load PyTorch:
+
+bash
+
+```
+module load pytorch/2.6.0
+```
+
+Launch a multi-node training script:
+
+bash
+
+```
+./multinode_setup_and_run.sh <filename>.py
+```
+
+#### Files and Examples
+
+- `6_torch_dist_multi_node.py` — Demonstrates distributed `all_reduce` communication across multiple nodes.
+- `7_mnist_ddp_pt_multinode.py` — Implements MNIST training using PyTorch DDP across multiple nodes and GPUs.
+- `8_mnist_ddp_pt_multinode_streaming.py` — Extends multi-node DDP training with a streaming data loader that reads data from disk in chunks.
+- `create_mnist_h5.py` — Creates a chunked MNIST dataset in HDF5 format for streaming data-loading experiments.
+- `9_fsdp_bench.py` — Demonstrates multi-GPU MNIST training with Fully Sharded Data Parallel (FSDP) and profiles memory usage.
+
+## Learning Objectives
+
+By the end of these two sessions, participants should be able to:
+
+- Understand the basics of PyTorch distributed communication and collective operations such as `all_reduce`.
+- Distinguish between independent multi-process execution and synchronized data-parallel training.
+- Implement distributed training manually and with PyTorch DDP.
+- Run distributed training jobs across multiple nodes and GPUs.
+- Use streaming data loading to handle datasets stored on disk.
+- Understand how FSDP shards model parameters, gradients, and optimizer states to reduce per-GPU memory requirements.
+- Profile memory usage and compare distributed training approaches.
