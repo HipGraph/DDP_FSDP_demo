@@ -27,7 +27,7 @@ salloc --nodes=2 --qos=interactive --time=00:30:00 \
 
 ### 2. Load PyTorch
 
-bash
+
 
 ```
 module load pytorch/2.6.0
@@ -37,7 +37,7 @@ module load pytorch/2.6.0
 
 From the project directory, run:
 
-bash
+
 
 ```
 ./multinode_setup_and_run.sh <filename>.py
@@ -45,7 +45,7 @@ bash
 
 For example:
 
-bash
+
 
 ```
 ./multinode_setup_and_run.sh 7_mnist_ddp_pt_multinode.py
@@ -87,7 +87,7 @@ The second day extends distributed training across multiple nodes, introduces st
 
 Allocate two nodes with four GPUs per node:
 
-bash
+
 
 ```
 salloc --nodes=2 --qos=interactive --time=00:30:00 \
@@ -98,7 +98,7 @@ salloc --nodes=2 --qos=interactive --time=00:30:00 \
 
 Load PyTorch:
 
-bash
+
 
 ```
 module load pytorch/2.6.0
@@ -106,7 +106,7 @@ module load pytorch/2.6.0
 
 Launch a multi-node training script:
 
-bash
+
 
 ```
 ./multinode_setup_and_run.sh <filename>.py
